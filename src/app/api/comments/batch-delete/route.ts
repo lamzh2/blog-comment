@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.comment.updateMany({
-      where: { id: { in: [...allIds] } },
+      where: { id: { in: Array.from(allIds) } },
       data: { isDeleted: true },
     });
 
-    return NextResponse.json({ deleted: allIds.size, commentIds: [...allIds] });
+    return NextResponse.json({ deleted: allIds.size, commentIds: Array.from(allIds) });
   } catch (error) {
     console.error('BATCH DELETE error:', error);
     return NextResponse.json({ error: 'Failed to batch delete' }, { status: 500 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { validateContent, sanitizeInput, validateVisitorId } from '@/lib/security';
+import { validateContent, sanitizeInput } from '@/lib/security';
+import { parseMentions } from '@/lib/mentions';
 
 // GET /api/articles/[articleId]/comments — 获取树形评论列表
 export async function GET(
@@ -35,7 +36,7 @@ export async function POST(
 ) {
   try {
     const { articleId } = params;
-    const { content, authorName, visitorId } = await req.json();
+    const { content, authorName } = await req.json();
 
     // 输入校验
     const contentError = validateContent(content);
@@ -128,8 +129,3 @@ function buildCommentTree(comments: CommentWithMeta[]): TreeNode[] {
   return roots;
 }
 
-export function parseMentions(content: string): string[] {
-  const matches = content.match(/@(\w+)/g);
-  if (!matches) return [];
-  return [...new Set(matches.map(m => m.slice(1)))];
-}

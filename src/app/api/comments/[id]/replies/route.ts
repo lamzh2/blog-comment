@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseMentions } from '@/app/api/articles/[articleId]/comments/route';
+import { parseMentions } from '@/lib/mentions';
 import { validateContent, sanitizeInput } from '@/lib/security';
 
 // POST /api/comments/[id]/replies — 回复评论
@@ -10,7 +10,7 @@ export async function POST(
 ) {
   try {
     const parentId = params.id;
-    const { content, authorName, visitorId } = await req.json();
+    const { content, authorName } = await req.json();
 
     // 输入校验
     const contentError = validateContent(content);
