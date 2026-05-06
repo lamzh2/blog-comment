@@ -7,6 +7,14 @@ interface Props {
   articleId: string;
 }
 
+
+interface CommentNode {
+  id: string;
+  children?: CommentNode[];
+  authorName?: string | null;
+  content?: string;
+}
+
 export function CommentManagement({ articleId }: Props) {
   const { isAuthor, comments, deleteComment, batchDelete, fetchComments } = useCommentStore();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -92,7 +100,7 @@ export function CommentManagement({ articleId }: Props) {
                 onChange={() => toggleSelect(id)}
               />
               <span className="text-neutral-600 truncate flex-1">
-                {comment.authorName || 'Anonymous'}: {comment.content.slice(0, 40)}...
+                {comment.authorName || 'Anonymous'}: {(comment.content || "").slice(0, 40)}...
               </span>
               <button
                 onClick={() => handleSingleDelete(id)}
@@ -108,9 +116,9 @@ export function CommentManagement({ articleId }: Props) {
   );
 }
 
-function collectAllIds(comments: { id: string; children?: any[] }[]): string[] {
+function collectAllIds(comments: CommentNode[]): string[] {
   const ids: string[] = [];
-  const walk = (list: { id: string; children?: any[] }[]) => {
+  const walk = (list: CommentNode[]) => {
     list.forEach(c => {
       ids.push(c.id);
       if (c.children) walk(c.children);
@@ -120,7 +128,7 @@ function collectAllIds(comments: { id: string; children?: any[] }[]): string[] {
   return ids;
 }
 
-function findComment(comments: { id: string; children?: any[]; authorName: string | null; content: string }[], id: string): { id: string; children?: any[]; authorName: string | null; content: string } | null {
+function findComment(comments: CommentNode[], id: string): CommentNode | null {
   for (const c of comments) {
     if (c.id === id) return c;
     if (c.children) {
