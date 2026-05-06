@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { isAuthor } from '@/lib/auth';
 
 // DELETE /api/comments/[id] — 软删除（级联删除子评论）
 export async function DELETE(
@@ -7,6 +8,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 权限验证：只有作者可删除
+    if (!isAuthor(req)) {
+      return NextResponse.json({ error: 'Unauthorized: author only' }, { status: 403 });
+    }
+
     const commentId = params.id;
 
     const comment = await prisma.comment.findUnique({

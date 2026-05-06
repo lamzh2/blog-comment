@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseMentions } from '@/app/api/articles/[articleId]/comments/route';
+import { validateContent, sanitizeInput } from '@/lib/security';
 
 // POST /api/comments/[id]/replies — 回复评论
 export async function POST(
@@ -11,10 +12,13 @@ export async function POST(
     const parentId = params.id;
     const { content, authorName, visitorId } = await req.json();
 
-    // 空内容拒绝
-    if (!content || !content.trim()) {
-      return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
+    // 输入校验
+    const contentError = validateContent(content);
+    if (contentError) {
+      return NextResponse.json({ error: contentError }, { status: 400 });
     }
+
+    const sanitized = sanitizeInput(content.trim());
 
     // 查父评论
     const parent = await prisma.comment.findUnique({
@@ -38,7 +42,7 @@ export async function POST(
         articleId: parent.articleId,
         parentId,
         rootId,
-        content: content.trim(),
+        content: sanitized,
         authorName: authorName || null,
         depth: newDepth,
       },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { validateContent, sanitizeInput, validateVisitorId } from '@/lib/security';
 
 // GET /api/articles/[articleId]/comments — 获取树形评论列表
 export async function GET(
@@ -36,15 +37,18 @@ export async function POST(
     const { articleId } = params;
     const { content, authorName, visitorId } = await req.json();
 
-    // 空内容拒绝
-    if (!content || !content.trim()) {
-      return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
+    // 输入校验
+    const contentError = validateContent(content);
+    if (contentError) {
+      return NextResponse.json({ error: contentError }, { status: 400 });
     }
+
+    const sanitized = sanitizeInput(content.trim());
 
     const comment = await prisma.comment.create({
       data: {
         articleId,
-        content: content.trim(),
+        content: sanitized,
         authorName: authorName || null,
         depth: 0,
       },
