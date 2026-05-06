@@ -1,13 +1,79 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  articleId   String    @map("article_id")
+  parentId    String?   @map("parent_id")
+  rootId      String?   @map("root_id")
+  content     String
+  authorName  String?   @map("author_name")
+  depth       Int       @default(0)
+  likesCount  Int       @default(0) @map("likes_count")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // self-relations for nested comments
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+  root     Comment?  @relation("CommentRoot", fields: [rootId], references: [id])
+  children Comment[] @relation("CommentRoot")
+
+  likes    CommentLike[]
+  reports  CommentReport[]
+  mentions CommentMention[]
+
+  @@index([articleId])
+  @@index([parentId])
+  @@index([rootId])
+  @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String   @map("comment_id")
+  visitorId String   @map("visitor_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, visitorId])
+  @@index([visitorId])
+  @@map("comment_likes")
+}
+
+model CommentReport {
+  id        String   @id @default(cuid())
+  commentId String   @map("comment_id")
+  reason    String
+  visitorId String   @map("visitor_id")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("comment_reports")
+}
+
+model CommentMention {
+  id            String   @id @default(cuid())
+  commentId     String   @map("comment_id")
+  mentionedUser String   @map("mentioned_user")
+  isRead        Boolean  @default(false) @map("is_read")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([mentionedUser])
+  @@map("comment_mentions")
 }
